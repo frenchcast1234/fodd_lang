@@ -142,7 +142,7 @@ static TokenType identifierType() {
 static Token identifier() {
     while (isAlpha(peek()) || isDigit(peek()))
         advance();
-    return makeToken(TOKEN_STRING);
+    return makeToken(identifierType());
 }
 
 static Token number() {
@@ -198,6 +198,7 @@ Token scanToken() {
     case '/': return makeToken(TOKEN_SLASH);
     case '*': return makeToken(TOKEN_STAR);
     case '!': return makeToken(match('=') ? TOKEN_BANG_EQUAL : TOKEN_BANG);
+    case '=': return makeToken(match('=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL);
     case '<': return makeToken(match('=') ? TOKEN_LESS_EQUAL : TOKEN_LESS);
     case '>': return makeToken(match('=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER);
     case '"': return string();
