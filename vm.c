@@ -64,7 +64,8 @@ static void concatenate() {
     push(OBJ_VAL(result));
 }
 
-void initVM() { 
+void initVM() {
+    freeTable(&vm.strings);
     resetStack();
     vm.objects = NULL;
 }
