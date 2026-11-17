@@ -91,19 +91,19 @@ static bool call(ObjClosure *closure, int argCount) {
 static bool callValue(Value callee, int argCount) {
     if (IS_OBJ(callee)) {
         switch (OBJ_TYPE(callee)) {
-        case OBJ_CLOSURE:
-            return call(AS_CLOSURE(callee), argCount);
-        case OBJ_FUNCTION:
-            return call(AS_CLOSURE(callee), argCount);
-        case OBJ_NATIVE: {
-            NativeFn native = AS_NATIVE(callee);
-            Value result = native(argCount, vm.stackTop - argCount);
-            vm.stackTop -= argCount + 1;
-            push(result);
-            return true;
-        }
-        default:
-            break; // Non-callable object type
+            case OBJ_CLOSURE:
+                return call(AS_CLOSURE(callee), argCount);
+            case OBJ_FUNCTION:
+                return call(AS_CLOSURE(callee), argCount);
+            case OBJ_NATIVE: {
+                NativeFn native = AS_NATIVE(callee);
+                Value result = native(argCount, vm.stackTop - argCount);
+                vm.stackTop -= argCount + 1;
+                push(result);
+                return true;
+            }
+            default:
+                break; // Non-callable object type
         }
     }
     runtimeError("Can only call functions and classes.");
@@ -198,173 +198,173 @@ static InterpretResult run() {
 #endif
         uint8_t instruction;
         switch (instruction = READ_BYTE()) {
-        case OP_CONSTANT: {
-            Value constant = READ_CONSTANT();
-            push(constant);
-            printValue(constant);
-            printf("\n");
-            break;
-        }
-        case OP_NIL:
-            push(NIL_VAL);
-            break;
-        case OP_TRUE:
-            push(BOOL_VAL(true));
-            break;
-        case OP_FALSE:
-            push(BOOL_VAL(false));
-            break;
-        case OP_POP:
-            pop();
-            break;
-        case OP_GET_LOCAL: {
-            uint8_t slot = READ_BYTE();
-            push(frame->slots[slot]);
-            break;
-        }
-        case OP_GET_GLOBAL: {
-            ObjString *name = READ_STRING();
-            Value value;
-            if (!tableGet(&vm.globals, name, &value)) {
-                runtimeError("Undefined variable '%s'", name->chars);
-                return INTERPRET_RUNTIME_ERROR;
+            case OP_CONSTANT: {
+                Value constant = READ_CONSTANT();
+                push(constant);
+                printValue(constant);
+                printf("\n");
+                break;
             }
-            push(value);
-            break;
-        }
-        case OP_DEFINE_GLOBAL: {
-            ObjString *name = READ_STRING();
-            tableSet(&vm.globals, name, peek(0));
-            pop();
-            break;
-        }
-        case OP_SET_LOCAL: {
-            uint8_t slot = READ_BYTE();
-            frame->slots[slot] = peek(0);
-            break;
-        }
-        case OP_SET_GLOBAL: {
-            ObjString *name = READ_STRING();
-            if (tableSet(&vm.globals, name, peek(0))) {
-                tableDelete(&vm.globals, name);
-                runtimeError("Undefined variable '%s'", name->chars);
-                return INTERPRET_RUNTIME_ERROR;
-            }
-            break;
-        }
-        case OP_GET_UPVALUE: {
-            uint8_t slot = READ_BYTE();
-            push(*frame->closure->upvalues[slot]->location);
-            break;
-        }
-        case OP_SET_UPVALUE: {
-            uint8_t slot = READ_BYTE();
-            *frame->closure->upvalues[slot]->location = peek(0);
-            break;
-        }
-        case OP_EQUAL:
-            Value b = pop();
-            Value a = pop();
-            push(BOOL_VAL(valuesEqual(a, b)));
-            break;
-        case OP_GREATER:
-            BINARY_OP(BOOL_VAL, >); 
-            break;
-        case OP_LESS:
-            BINARY_OP(BOOL_VAL, <);
-            break;
-        case OP_ADD:
-            if (IS_STRING(peek(0)) && IS_STRING(peek(1))) {
-                concatenate();
-            } else if (IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))) {
-                double b = AS_NUMBER(pop());
-                double a = AS_NUMBER(pop());
-                push(NUMBER_VAL(a + b));
-            } else {
-                runtimeError("Operands must be two numbers or two strings.");
-                return INTERPRET_RUNTIME_ERROR;
-            }
-            break;
-        case OP_SUBSTRACT:
-            BINARY_OP(NUMBER_VAL, -);
-            break;
-        case OP_MULTIPLY:
-            BINARY_OP(NUMBER_VAL, *);
-            break;
-        case OP_DIVIDE:
-            BINARY_OP(NUMBER_VAL, /);
-            break;
-        case OP_NOT:
-            push(BOOL_VAL(isFalsey(pop())));
-            break;
-        case OP_NEGATE:
-            if (!IS_NUMBER(peek(0))) {
-                runtimeError("Operand must be a number.");
-                return INTERPRET_RUNTIME_ERROR;
-            }
-            push(NUMBER_VAL(-AS_NUMBER(pop())));
-            break;
-        case OP_PRINT: {
-            printValue(pop());
-            printf("\n");
-            break;
-        }
-        case OP_JUMP: {
-            uint8_t offset = READ_SHORT();
-            frame->ip += offset;
-            break;
-        }
-        case OP_JUMP_IF_FALSE: {
-            uint8_t offset = READ_SHORT();
-            if (isFalsey(peek(0))) frame->ip += offset;
-            break;
-        }
-        case OP_LOOP: {
-            uint16_t offset = READ_SHORT();
-            frame->ip -= offset;
-            break;
-        }
-        case OP_CLOSURE: {
-            ObjFunction *function = AS_FUNCTION(READ_CONSTANT());
-            ObjClosure *closure = newClosure(function);
-            push(OBJ_VAL(closure));
-            for (int i = 0; i < closure->upvalueCount; i++) {
-                uint8_t isLocal = READ_BYTE();
-                uint8_t index = READ_BYTE();
-                if (isLocal) {
-                    closure->upvalues[i] = captureUpvalue(frame->slots + index);
-                } else {
-                    closure->upvalues[i] = frame->closure->upvalues[index];
-                }
-            }
-            break;
-        }
-        case OP_CLOSE_UPVALUE: {
-            closeUpvalues(vm.stackTop - 1);
-            pop();
-            break;
-        }
-        case OP_CALL:
-            int argCount = READ_BYTE();
-            if (!callValue(peek(argCount), argCount)) {
-                return INTERPRET_RUNTIME_ERROR;
-            }
-            frame = &vm.frames[vm.frameCount - 1];
-            break;
-        case OP_RETURN: {
-            Value result = pop();
-            closeUpvalues(frame->slots);
-            vm.frameCount--;
-            if (vm.frameCount == 0) {
+            case OP_NIL:
+                push(NIL_VAL);
+                break;
+            case OP_TRUE:
+                push(BOOL_VAL(true));
+                break;
+            case OP_FALSE:
+                push(BOOL_VAL(false));
+                break;
+            case OP_POP:
                 pop();
-                return INTERPRET_OK;
+                break;
+            case OP_GET_LOCAL: {
+                uint8_t slot = READ_BYTE();
+                push(frame->slots[slot]);
+                break;
             }
+            case OP_GET_GLOBAL: {
+                ObjString *name = READ_STRING();
+                Value value;
+                if (!tableGet(&vm.globals, name, &value)) {
+                    runtimeError("Undefined variable '%s'", name->chars);
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                push(value);
+                break;
+            }
+            case OP_DEFINE_GLOBAL: {
+                ObjString *name = READ_STRING();
+                tableSet(&vm.globals, name, peek(0));
+                pop();
+                break;
+            }
+            case OP_SET_LOCAL: {
+                uint8_t slot = READ_BYTE();
+                frame->slots[slot] = peek(0);
+                break;
+            }
+            case OP_SET_GLOBAL: {
+                ObjString *name = READ_STRING();
+                if (tableSet(&vm.globals, name, peek(0))) {
+                    tableDelete(&vm.globals, name);
+                    runtimeError("Undefined variable '%s'", name->chars);
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                break;
+            }
+            case OP_GET_UPVALUE: {
+                uint8_t slot = READ_BYTE();
+                push(*frame->closure->upvalues[slot]->location);
+                break;
+            }
+            case OP_SET_UPVALUE: {
+                uint8_t slot = READ_BYTE();
+                *frame->closure->upvalues[slot]->location = peek(0);
+                break;
+            }
+            case OP_EQUAL:
+                Value b = pop();
+                Value a = pop();
+                push(BOOL_VAL(valuesEqual(a, b)));
+                break;
+            case OP_GREATER:
+                BINARY_OP(BOOL_VAL, >); 
+                break;
+            case OP_LESS:
+                BINARY_OP(BOOL_VAL, <);
+                break;
+            case OP_ADD:
+                if (IS_STRING(peek(0)) && IS_STRING(peek(1))) {
+                    concatenate();
+                } else if (IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))) {
+                    double b = AS_NUMBER(pop());
+                    double a = AS_NUMBER(pop());
+                    push(NUMBER_VAL(a + b));
+                } else {
+                    runtimeError("Operands must be two numbers or two strings.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                break;
+            case OP_SUBSTRACT:
+                BINARY_OP(NUMBER_VAL, -);
+                break;
+            case OP_MULTIPLY:
+                BINARY_OP(NUMBER_VAL, *);
+                break;
+            case OP_DIVIDE:
+                BINARY_OP(NUMBER_VAL, /);
+                break;
+            case OP_NOT:
+                push(BOOL_VAL(isFalsey(pop())));
+                break;
+            case OP_NEGATE:
+                if (!IS_NUMBER(peek(0))) {
+                    runtimeError("Operand must be a number.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                push(NUMBER_VAL(-AS_NUMBER(pop())));
+                break;
+            case OP_PRINT: {
+                printValue(pop());
+                printf("\n");
+                break;
+            }
+            case OP_JUMP: {
+                uint8_t offset = READ_SHORT();
+                frame->ip += offset;
+                break;
+            }
+            case OP_JUMP_IF_FALSE: {
+                uint8_t offset = READ_SHORT();
+                if (isFalsey(peek(0))) frame->ip += offset;
+                break;
+            }
+            case OP_LOOP: {
+                uint16_t offset = READ_SHORT();
+                frame->ip -= offset;
+                break;
+            }
+            case OP_CLOSURE: {
+                ObjFunction *function = AS_FUNCTION(READ_CONSTANT());
+                ObjClosure *closure = newClosure(function);
+                push(OBJ_VAL(closure));
+                for (int i = 0; i < closure->upvalueCount; i++) {
+                    uint8_t isLocal = READ_BYTE();
+                    uint8_t index = READ_BYTE();
+                    if (isLocal) {
+                        closure->upvalues[i] = captureUpvalue(frame->slots + index);
+                    } else {
+                        closure->upvalues[i] = frame->closure->upvalues[index];
+                    }
+                }
+                break;
+            }
+            case OP_CLOSE_UPVALUE: {
+                closeUpvalues(vm.stackTop - 1);
+                pop();
+                break;
+            }
+            case OP_CALL:
+                int argCount = READ_BYTE();
+                if (!callValue(peek(argCount), argCount)) {
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                frame = &vm.frames[vm.frameCount - 1];
+                break;
+            case OP_RETURN: {
+                Value result = pop();
+                closeUpvalues(frame->slots);
+                vm.frameCount--;
+                if (vm.frameCount == 0) {
+                    pop();
+                    return INTERPRET_OK;
+                }
 
-            vm.stackTop = frame->slots;
-            push(result);
-            frame = &vm.frames[vm.frameCount - 1];
-            break;
-        }
+                vm.stackTop = frame->slots;
+                push(result);
+                frame = &vm.frames[vm.frameCount - 1];
+                break;
+            }
         }
   }
 

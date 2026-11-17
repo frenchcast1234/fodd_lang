@@ -404,17 +404,17 @@ static void call(bool canAssign) {
 
 static void literal(bool canAssign) {
     switch (parser.previous.type) {
-    case TOKEN_FALSE: 
-        emitByte(OP_FALSE); 
-        break;
-    case TOKEN_TRUE:
-        emitByte(OP_TRUE);
-        break;
-    case TOKEN_NIL:
-        emitByte(OP_NIL);
-        break;
-    default:
-        return; // Unreachable
+        case TOKEN_FALSE: 
+            emitByte(OP_FALSE); 
+            break;
+        case TOKEN_TRUE:
+            emitByte(OP_TRUE);
+            break;
+        case TOKEN_NIL:
+            emitByte(OP_NIL);
+            break;
+        default:
+            return; // Unreachable
     }
 }
 
