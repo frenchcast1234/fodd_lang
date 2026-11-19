@@ -1,3 +1,2 @@
-halt_lang
-run.sh
+clox
 test.lox
