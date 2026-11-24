@@ -1,5 +1,5 @@
-#ifndef clox_chunk_h
-#define clox_chunk_h
+#ifndef FODD_CHUNK_H
+#define FODD_CHUNK_H
 
 #include "common.h"
 #include "memory.h"

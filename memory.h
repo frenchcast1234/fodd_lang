@@ -1,5 +1,5 @@
-#ifndef clox_memory_h
-#define clox_memory_h
+#ifndef FODD_MEMORY_H
+#define FODD_MEMORY_H
 
 #include "common.h"
 #include "value.h"

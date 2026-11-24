@@ -1,5 +1,5 @@
-#ifndef clox_compiler_h
-#define clox_compiler_h
+#ifndef FODD_COMPILER_H
+#define FODD_COMPILER_H
 
 #include "vm.h"
 #include "object.h"

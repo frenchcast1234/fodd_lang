@@ -1,5 +1,5 @@
-#ifndef clox_object_h
-#define clox_object_h
+#ifndef FODD_OBJECT_H
+#define FODD_OBJECT_H
 
 #include "common.h"
 #include "chunk.h"

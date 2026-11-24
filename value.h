@@ -1,5 +1,5 @@
-#ifndef clox_value_h
-#define clox_value_h
+#ifndef FODD_VALUE_H
+#define FODD_VALUE_H
 
 #include <string.h>
 
