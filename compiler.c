@@ -192,7 +192,7 @@ static void patchJump(int offset) {
     // -2 to adjust the bytecode for the jump offset itself.
     int jump = currentChunk()->count - offset - 2;
 
-    if (jump > UINT8_MAX) {
+    if (jump > UINT16_MAX) {
         error("Too much code to jump over.");
     }
 
@@ -758,7 +758,6 @@ static void expressionStatement() {
 static void forStatement() {
     beginScope();
     consume(TOKEN_LEFT_PAREN, "Expect '(' after 'for'.");
-    consume(TOKEN_SEMICOLON, "Expect ';'.");
 
     if (match(TOKEN_SEMICOLON)) {
         // No initializer.
